@@ -1,10 +1,36 @@
 # Tami, Adam, Misi
-# base version for Git
+# Labyrinth game
+# You need to find a key to open the door that leads you out of the labyrinth
 
 # Import libraries and methods that we need
 import curses, random, time
 from curses import wrapper
 from copy import deepcopy
+
+# Checks if terminal is big enough for map, this is independent from wrapper
+def testTerminal():
+    global map_dim
+
+    # Read map into list
+    f = open('map', 'r')
+    map_test = f.readlines()
+    f.close()
+
+    # Save map dimensions
+    map_dim = [0,0]
+    map_dim[0] = len(map_test)
+    map_dim[1] = len(map_test[0])
+
+    # Test size of terminal
+    openpage = curses.initscr()
+    max_y, max_x = openpage.getmaxyx()
+    if map_dim[0] > max_y or map_dim[1] > max_x:
+        print("Please make the terminal at least " + str(map_dim[1]) +
+        " characters wide and " + str(map_dim[0]) + " characters long")
+        curses.endwin()
+        quit()
+    else:
+        pass
 
 # A collection of things that need to be done in the beggining, after readMap()
 def initialize(screen):
@@ -29,14 +55,9 @@ def initialize(screen):
 
 # Generates the position of the key, has to run after readMap()
 def keyDrop():
-    global key_drop_coordinates, key_drop_coordinates_f_of_w
+    global key_drop_coordinates
     key_drop = random.sample(space_coordinates, 1)
     key_drop_coordinates = {key_drop[0]}
-    key_drop_coordinates_f_of_w = {key_drop[0]}
-
-# Draws Rezso on the screen
-def drawRezso(screen):
-    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(5))
 
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
@@ -138,6 +159,10 @@ def drawMap(screen):
                 if (j,i) in key_drop_coordinates:
                         screen.addstr(j, i, 'k', curses.color_pair(4))
 
+# Draws Rezso on the screen
+def drawRezso(screen):
+    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(5))
+
 # Controls the movement of Rezso, the 'R' character on screen
 def movement(screen):
     global R_pos, R_pos_previous, q
@@ -194,31 +219,6 @@ def win(screen):
     screen.refresh()
     time.sleep(1)
 
-
-# Checks if terminal is big enough for map, this is independent from wrapper
-def testTerminal():
-    global map_dim
-
-    # Read map into list
-    f = open('map', 'r')
-    map_test = f.readlines()
-    f.close()
-
-    # Save map dimensions
-    map_dim = [0,0]
-    map_dim[0] = len(map_test)
-    map_dim[1] = len(map_test[0])
-
-    # Test size of terminal
-    openpage = curses.initscr()
-    max_y, max_x = openpage.getmaxyx()
-    if map_dim[0] > max_y or map_dim[1] > max_x:
-        print("Please make the terminal at least " + str(map_dim[1]) +
-        " characters wide and " + str(map_dim[0]) + " characters long")
-        curses.endwin()
-        quit()
-    else:
-        pass
 
 # Define the main() function for the wrapper
 def main(screen):
