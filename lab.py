@@ -21,11 +21,11 @@ def initialize(screen):
     # Makes colors
     if curses.has_colors():
         curses.start_color()
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
-    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_WHITE)
+    curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE)
+    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE)
+    curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
 # Generates the position of the key, has to run after readMap()
 def keyDrop():
@@ -36,7 +36,7 @@ def keyDrop():
 
 # Draws Rezso on the screen
 def drawRezso(screen):
-    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(2))
+    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(5))
 
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
@@ -114,10 +114,10 @@ def drawMap(screen):
             if (j,i) in map_fog_of_war:
 
                 if map_in_memory[j][i] in start_char:
-                    screen.addstr(j, i, ' ', curses.COLOR_WHITE)
+                    screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 if map_in_memory[j][i] in space_char:
-                    screen.addstr(j, i, ' ')
+                    screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 if map_in_memory[j][i] in door_char:
                     screen.addstr(j, i, '?', curses.color_pair(4))
@@ -126,10 +126,10 @@ def drawMap(screen):
                         screen.addstr(j, i, '▫', curses.color_pair(3))
 
                 if map_in_memory[j][i] in wall_char_hor:
-                        screen.addstr(j, i, '▬')
+                        screen.addstr(j, i, '▬', curses.color_pair(2))
 
                 if map_in_memory[j][i] in wall_char_ver:
-                        screen.addstr(j, i, '▮')
+                        screen.addstr(j, i, '▮', curses.color_pair(2))
 
                 if map_in_memory[j][i] in win_char:
                         screen.addstr(j, i, '☺', curses.color_pair(4))
@@ -192,7 +192,7 @@ def win(screen):
     screen.clear()
     screen.addstr(map_dim[0] // 2, map_dim[1] // 2 - len(endstring) // 2, endstring)
     screen.refresh()
-    time.sleep(3)
+    time.sleep(1)
 
 
 # Checks if terminal is big enough for map, this is independent from wrapper
