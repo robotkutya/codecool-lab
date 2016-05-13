@@ -22,18 +22,18 @@ def testTerminal():
     map_dim[1] = len(map_test[0])
 
     # Test size of terminal
-    openpage = curses.initscr()
-    max_y, max_x = openpage.getmaxyx()
-    if map_dim[0] > max_y or map_dim[1] > max_x:
+    test_window = curses.initscr()
+    max_y, max_x = test_window.getmaxyx()
+    if map_dim[0] + 3 > max_y or map_dim[1] > max_x:
         print("Please make the terminal at least " + str(map_dim[1]) +
-        " characters wide and " + str(map_dim[0]) + " characters long")
+        " characters wide and " + str(map_dim[0]+2) + " lines high.")
         curses.endwin()
         quit()
     else:
         pass
 
 # A collection of things that need to be done in the beggining, after readMap()
-def initialize(screen):
+def initialize():
     global q, win_condition, map_fog_of_war
 
     # Set global variables
@@ -52,6 +52,8 @@ def initialize(screen):
     curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_WHITE)
     curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE)
     curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(6, curses.COLOR_WHITE, curses.COLOR_CYAN)
+    curses.init_pair(7, curses.COLOR_CYAN, curses.COLOR_MAGENTA)
 
 # Generates the position of the key, has to run after readMap()
 def keyDrop():
@@ -61,7 +63,7 @@ def keyDrop():
 
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
-def readMap(screen):
+def readMap():
     global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, win_char
 
     # Set up variables
@@ -127,13 +129,14 @@ def drawMap(screen):
         for y in range(-2, 3):
             map_fog_of_war.add((R_pos[0] + x, R_pos[1] + y))
 
-    # Draw map
+    # Draw map from saved nested list
     for j in range(0,len(map_in_memory)):
         for i in range(0,len(map_in_memory[0])):
 
             # Only draw if Rezso already saw it
             if (j,i) in map_fog_of_war:
 
+                # Define how things look
                 if map_in_memory[j][i] in start_char:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
@@ -144,7 +147,7 @@ def drawMap(screen):
                     screen.addstr(j, i, '?', curses.color_pair(4))
 
                 if map_in_memory[j][i] in teleport_char:
-                        screen.addstr(j, i, '▫', curses.color_pair(3))
+                        screen.addstr(j, i, '⋄', curses.color_pair(3))
 
                 if map_in_memory[j][i] in wall_char_hor:
                         screen.addstr(j, i, '▬', curses.color_pair(2))
@@ -153,9 +156,9 @@ def drawMap(screen):
                         screen.addstr(j, i, '▮', curses.color_pair(2))
 
                 if map_in_memory[j][i] in win_char:
-                        screen.addstr(j, i, '☺', curses.color_pair(4))
+                        screen.addstr(j, i, 'X', curses.color_pair(4))
 
-                # We draw the key not from the map but from the drop
+                # We draw the key not from the map but from the keyDrop()
                 if (j,i) in key_drop_coordinates:
                         screen.addstr(j, i, 'k', curses.color_pair(4))
 
@@ -164,14 +167,11 @@ def drawRezso(screen):
     screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(5))
 
 # Controls the movement of Rezso, the 'R' character on screen
-def movement(screen):
+def movement():
     global R_pos, R_pos_previous, q
 
     # Save Rezso's position
     R_pos_previous = deepcopy(R_pos)
-
-    # Get user input
-    q = screen.getch()
 
     # Movement itself
     if q == curses.KEY_UP and R_pos[0] > 0:
@@ -186,7 +186,7 @@ def movement(screen):
         pass
 
 # Decides what happens when Rezso moves into an entity, e.g. a wall
-def checker(screen):
+def checker():
     global win_condition, R_pos, R_pos_previous, wall_coordinates, door_coordinates, teleport_coordinates
 
     # Makes walls impenetrable
@@ -212,32 +212,52 @@ def checker(screen):
         win_condition = 1
 
 # What happens when you win
-def win(screen):
-    endstring =  'BYE-BYE!'
-    screen.clear()
-    screen.addstr(map_dim[0] // 2, map_dim[1] // 2 - len(endstring) // 2, endstring)
-    screen.refresh()
-    time.sleep(1)
+def win(stdscr):
+    endstring = 'EPIC WIN'
+    my, mx = stdscr.getmaxyx()
+    window_win = curses.newwin(3, len(endstring)+2, my // 2 - 2, mx // 2 - len(endstring) // 2)
+    window_win.bkgd(' ', curses.color_pair(7))
+    window_win.clear()
+    window_win.addstr(1, 1, endstring, curses.color_pair(2))
+    window_win.refresh()
+    time.sleep(1.5)
 
 
 # Define the main() function for the wrapper
-def main(screen):
-    # We need to pass global variables to the wrapper
-    global q, win_condition
+def main(stdscr):
+    # We need to pass global variables to the wrapper, which is called outside
+    # this function
+    global q
 
-    readMap(screen)
-    initialize(screen)
+    readMap()
+    initialize()
     keyDrop()
 
+    # Make window for background
+    my, mx = stdscr.getmaxyx()
+    window_background = curses.newwin(my, mx, 0, 0)
+    window_background.bkgd(' ', curses.color_pair(6))
+    info_string = 'Press \'q\' to quit. Use the arrow keys to move with Rezső.'
+    window_background.addstr(my-2, mx // 2 - len(info_string) // 2, info_string, curses.color_pair(6))
+    window_background.refresh()
+
+    # Make window for map
+    screen = curses.newwin(map_dim[0], map_dim[1], (my - map_dim[0]) // 2, (mx - map_dim[1]) // 2)
+    screen.bkgd(' ', curses.color_pair(6))
+    screen.keypad(1)
+
+    # The actual game
     while q != ord('q') and win_condition == 0:
         screen.clear()
         drawMap(screen)
         drawRezso(screen)
-        movement(screen)
-        checker(screen)
+        q = screen.getch()
+        movement()
+        checker()
         screen.refresh()
 
-    win(screen)
+    if win_condition == 1:
+        win(stdscr)
     curses.endwin()
 
 # Use the wrapper to avoid bugs and test before
