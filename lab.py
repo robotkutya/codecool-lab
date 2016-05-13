@@ -79,7 +79,7 @@ def readMap():
     wall_char_hor = {'a'}
     space_char = {' '}
     teleport_char = {'T'}
-    door_char = {'K'}
+    door_char = {'D'}
     win_char = {'W'}
 
     # Read the map file lines into a list
@@ -136,15 +136,28 @@ def drawMap(screen):
             # Only draw if Rezso already saw it
             if (j,i) in map_fog_of_war:
 
-                # Define how things look
                 if map_in_memory[j][i] in start_char:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 if map_in_memory[j][i] in space_char:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
-                if map_in_memory[j][i] in door_char:
-                    screen.addstr(j, i, '?', curses.color_pair(4))
+                # Before picking up key
+                if door_coordinates <= wall_coordinates:
+                    if map_in_memory[j][i] in door_char:
+                        screen.addstr(j, i, '?', curses.color_pair(4))
+
+                    # We draw the key not from the map but from the keyDrop()
+                    if (j,i) in key_drop_coordinates:
+                        screen.addstr(j, i, 'k', curses.color_pair(4))
+
+                # After picking up key
+                if door_coordinates & wall_coordinates == set():
+                    if map_in_memory[j][i] in door_char:
+                        screen.addstr(j, i, ' ', curses.color_pair(4))
+
+                    if (j,i) in key_drop_coordinates:
+                        screen.addstr(j, i, ' ', curses.color_pair(4))
 
                 if map_in_memory[j][i] in teleport_char:
                         screen.addstr(j, i, '⋄', curses.color_pair(3))
@@ -157,10 +170,6 @@ def drawMap(screen):
 
                 if map_in_memory[j][i] in win_char:
                         screen.addstr(j, i, 'X', curses.color_pair(4))
-
-                # We draw the key not from the map but from the keyDrop()
-                if (j,i) in key_drop_coordinates:
-                        screen.addstr(j, i, 'k', curses.color_pair(4))
 
 # Draws Rezso on the screen
 def drawRezso(screen):
@@ -193,11 +202,11 @@ def checker():
     if (R_pos[0], R_pos[1]) in wall_coordinates:
         R_pos = deepcopy(R_pos_previous)
 
-    # Removes the keys blocking the exit when you pick up the key
-    if (R_pos[0], R_pos[1]) in key_drop_coordinates: #[0], key_drop_coordinates[1]):
+    # Removes the doors blocking the exit when you pick up the key
+    if (R_pos[0], R_pos[1]) in key_drop_coordinates:
         wall_coordinates -= door_coordinates
 
-    # Teleports you to a random beacon, but only once
+    # Teleports you to a random beacon, you can only use one beacon once
     if (R_pos[0], R_pos[1]) in teleport_coordinates:
         teleport_coordinates -= {(R_pos[0], R_pos[1])}
         try:
@@ -241,7 +250,7 @@ def main(stdscr):
     window_background.addstr(my-2, mx // 2 - len(info_string) // 2, info_string, curses.color_pair(6))
     window_background.refresh()
 
-    # Make window for map
+    # Make window for map so it can be nice and centered
     screen = curses.newwin(map_dim[0], map_dim[1], (my - map_dim[0]) // 2, (mx - map_dim[1]) // 2)
     screen.bkgd(' ', curses.color_pair(6))
     screen.keypad(1)
