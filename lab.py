@@ -2,26 +2,28 @@
 # base version for Git
 
 # Import libraries and methods that we need
-import curses, random
+import curses, random, time
 from curses import wrapper
 from copy import deepcopy
 
 # A collection of things that need to be done in the beggining, after readMap()
 def initialize(screen):
-    global q, map_fog_of_war
+    global q, win_condition, map_fog_of_war
 
     # Set global variables
     q = -1
+    win_condition = 0
     map_fog_of_war = set()
 
     # Makes the cursor not blink
     curses.curs_set(False)
 
 # Generates the position of the key, has to run after readMap()
-def keyDropM():
-    global key_drop_coordinates
+def keyDrop():
+    global key_drop_coordinates, key_drop_coordinates_f_of_w
     key_drop = random.sample(space_coordinates, 1)
     key_drop_coordinates = {key_drop[0]}
+    key_drop_coordinates_f_of_w = {key_drop[0]}
 
 # Draws Rezso on the screen
 def drawRezso(screen):
@@ -115,10 +117,10 @@ def drawMap(screen):
                         screen.addstr(j, i, '▫', curses.A_BLINK)
 
                 if map_in_memory[j][i] in wall_char_hor:
-                        screen.addstr(j, i, 'a')
+                        screen.addstr(j, i, '▬')
 
                 if map_in_memory[j][i] in wall_char_ver:
-                        screen.addstr(j, i, '8')
+                        screen.addstr(j, i, '▮')
 
                 if map_in_memory[j][i] in win_char:
                         screen.addstr(j, i, '☺')
@@ -151,7 +153,7 @@ def movement(screen):
 
 # Decides what happens when Rezso moves into an entity, e.g. a wall
 def checker(screen):
-    global R_pos, R_pos_previous, wall_coordinates, door_coordinates, teleport_coordinates
+    global win_condition, R_pos, R_pos_previous, wall_coordinates, door_coordinates, teleport_coordinates
 
     # Makes walls impenetrable
     if (R_pos[0], R_pos[1]) in wall_coordinates:
@@ -171,9 +173,18 @@ def checker(screen):
         except ValueError:
             pass
 
-# Draws menu, gives tutorial, explains the game
-def menu(screen):
-    pass
+    # Win condition
+    if (R_pos[0], R_pos[1]) in win_coordinates:
+        win_condition = 1
+
+# What happens when you win
+def win(screen):
+    endstring =  'EPIC WIN!'
+    screen.clear()
+    screen.addstr(map_dim[0] // 2, map_dim[1] // 2 - len(endstring) // 2, endstring)
+    screen.refresh()
+    time.sleep(3)
+
 
 # Checks if terminal is big enough for map, this is independent from wrapper
 def testTerminal():
@@ -203,22 +214,23 @@ def testTerminal():
 # Define the main() function for the wrapper
 def main(screen):
     # We need to pass global variables to the wrapper
-    global q
+    global q, win_condition
 
     readMap(screen)
     initialize(screen)
-    keyDropM()
-    menu(screen)
+    keyDrop()
 
-    while q != ord('q'):
+    while q != ord('q') and win_condition == 0:
         screen.clear()
         drawMap(screen)
         drawRezso(screen)
         movement(screen)
         checker(screen)
         screen.refresh()
+
+    win(screen)
     curses.endwin()
 
-# Use the wrapper to avoid bugs
+# Use the wrapper to avoid bugs and test before
 testTerminal()
 wrapper(main)
