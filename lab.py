@@ -27,7 +27,7 @@ def keyDrop():
 
 # Draws Rezso on the screen
 def drawRezso(screen):
-    screen.addstr(R_pos[0], R_pos[1], 'R', curses.A_BLINK)
+    screen.addstr(R_pos[0], R_pos[1], 'R')
 
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
@@ -179,7 +179,7 @@ def checker(screen):
 
 # What happens when you win
 def win(screen):
-    endstring =  'EPIC WIN!'
+    endstring =  'BYE-BYE!'
     screen.clear()
     screen.addstr(map_dim[0] // 2, map_dim[1] // 2 - len(endstring) // 2, endstring)
     screen.refresh()
