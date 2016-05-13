@@ -18,6 +18,15 @@ def initialize(screen):
     # Makes the cursor not blink
     curses.curs_set(False)
 
+    # Makes colors
+    if curses.has_colors():
+        curses.start_color()
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLACK)
+
 # Generates the position of the key, has to run after readMap()
 def keyDrop():
     global key_drop_coordinates, key_drop_coordinates_f_of_w
@@ -27,7 +36,7 @@ def keyDrop():
 
 # Draws Rezso on the screen
 def drawRezso(screen):
-    screen.addstr(R_pos[0], R_pos[1], 'R')
+    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(2))
 
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
@@ -111,10 +120,10 @@ def drawMap(screen):
                     screen.addstr(j, i, ' ')
 
                 if map_in_memory[j][i] in door_char:
-                    screen.addstr(j, i, '?')
+                    screen.addstr(j, i, '?', curses.color_pair(4))
 
                 if map_in_memory[j][i] in teleport_char:
-                        screen.addstr(j, i, '▫', curses.A_BLINK)
+                        screen.addstr(j, i, '▫', curses.color_pair(3))
 
                 if map_in_memory[j][i] in wall_char_hor:
                         screen.addstr(j, i, '▬')
@@ -123,11 +132,11 @@ def drawMap(screen):
                         screen.addstr(j, i, '▮')
 
                 if map_in_memory[j][i] in win_char:
-                        screen.addstr(j, i, '☺')
+                        screen.addstr(j, i, '☺', curses.color_pair(4))
 
                 # We draw the key not from the map but from the drop
                 if (j,i) in key_drop_coordinates:
-                        screen.addstr(j, i, 'k')
+                        screen.addstr(j, i, 'k', curses.color_pair(4))
 
 # Controls the movement of Rezso, the 'R' character on screen
 def movement(screen):
