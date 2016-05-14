@@ -53,7 +53,7 @@ def initialize():
     curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE)
     curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(6, curses.COLOR_WHITE, curses.COLOR_CYAN)
-    curses.init_pair(7, curses.COLOR_CYAN, curses.COLOR_MAGENTA)
+    curses.init_pair(7, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 
 # Generates the position of the key, has to run after readMap()
 def keyDrop():
@@ -64,7 +64,7 @@ def keyDrop():
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
 def readMap():
-    global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, win_char
+    global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, door_demo_coordinates, key_demo_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, door_demo_char, key_demo_char, win_char
 
     # Set up variables
     map_in_memory = []
@@ -73,6 +73,8 @@ def readMap():
     space_coordinates = set()
     teleport_coordinates = set()
     door_coordinates = set()
+    door_demo_coordinates = set()
+    key_demo_coordinates = set()
     win_coordinates = set()
     start_char = {'S'}
     wall_char_ver = {'8'}
@@ -80,6 +82,8 @@ def readMap():
     space_char = {' '}
     teleport_char = {'T'}
     door_char = {'D'}
+    door_demo_char = {'K'}
+    key_demo_char = {'k'}
     win_char = {'W'}
 
     # Read the map file lines into a list
@@ -109,6 +113,15 @@ def readMap():
                 door_coordinates.add((j, i))
                 wall_coordinates.add((j, i))
 
+            # Demo door
+            if map_in_memory[j][i] in door_demo_char:
+                door_demo_coordinates.add((j, i))
+                wall_coordinates.add((j, i))
+
+            # Key for demo door
+            if map_in_memory[j][i] in key_demo_char:
+                key_demo_coordinates.add((j, i))
+
             # Where you need to get to win
             if map_in_memory[j][i] in win_char:
                 win_coordinates.add((j, i))
@@ -136,6 +149,7 @@ def drawMap(screen):
             # Only draw if Rezso already saw it
             if (j,i) in map_fog_of_war:
 
+                # Empty space where Rezso can move
                 if map_in_memory[j][i] in start_char:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
@@ -159,15 +173,42 @@ def drawMap(screen):
                     if (j,i) in key_drop_coordinates:
                         screen.addstr(j, i, ' ', curses.color_pair(4))
 
-                if map_in_memory[j][i] in teleport_char:
-                        screen.addstr(j, i, '⋄', curses.color_pair(3))
+                # Before picking up demo key
+                if door_demo_coordinates <= wall_coordinates:
+                    if map_in_memory[j][i] in door_demo_char:
+                        screen.addstr(j, i, '?', curses.color_pair(4))
 
+                    if (j,i) in key_demo_coordinates:
+                        screen.addstr(j, i, 'k', curses.color_pair(4))
+
+                # After picking up demo key
+                if door_demo_coordinates & wall_coordinates == set():
+                    if map_in_memory[j][i] in door_demo_char:
+                        screen.addstr(j, i, ' ', curses.color_pair(4))
+
+                    if (j,i) in key_demo_coordinates:
+                        screen.addstr(j, i, ' ', curses.color_pair(4))
+
+                # Teleport
+                # Before use
+                if (j, i) in teleport_coordinates:
+
+                    if map_in_memory[j][i] in teleport_char:
+                            screen.addstr(j, i, '♦', curses.color_pair(3))
+
+                # After use
+                if (j, i) not in teleport_coordinates:
+                    if map_in_memory[j][i] in teleport_char:
+                            screen.addstr(j, i, '⋄', curses.color_pair(3))
+
+                # Walls
                 if map_in_memory[j][i] in wall_char_hor:
                         screen.addstr(j, i, '▬', curses.color_pair(2))
 
                 if map_in_memory[j][i] in wall_char_ver:
                         screen.addstr(j, i, '▮', curses.color_pair(2))
 
+                # Exit
                 if map_in_memory[j][i] in win_char:
                         screen.addstr(j, i, 'X', curses.color_pair(4))
 
@@ -206,7 +247,10 @@ def checker():
     if (R_pos[0], R_pos[1]) in key_drop_coordinates:
         wall_coordinates -= door_coordinates
 
-    # Teleports you to a random beacon, you can only use one beacon once
+    if (R_pos[0], R_pos[1]) in key_demo_coordinates:
+        wall_coordinates -= door_demo_coordinates
+
+    # Teleports you to a random beacon, but you can only use one beacon once
     if (R_pos[0], R_pos[1]) in teleport_coordinates:
         teleport_coordinates -= {(R_pos[0], R_pos[1])}
         try:
@@ -265,8 +309,8 @@ def main(stdscr):
         checker()
         screen.refresh()
 
-    if win_condition == 1:
-        win(stdscr)
+    #if win_condition == 1:
+    win(stdscr)
     curses.endwin()
 
 # Use the wrapper to avoid bugs and test before
