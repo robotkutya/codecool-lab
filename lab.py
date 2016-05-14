@@ -224,12 +224,12 @@ def checker():
 def win(stdscr):
     endstring = 'EPIC WIN'
     my, mx = stdscr.getmaxyx()
-    window_win = curses.newwin(3, len(endstring)+2, my // 2 - 2, mx // 2 - len(endstring) // 2)
+    window_win = curses.newwin(3, len(endstring) + 4, my // 2 - 2, mx // 2 - len(endstring) // 2)
     window_win.bkgd(' ', curses.color_pair(7))
     window_win.clear()
-    window_win.addstr(1, 1, endstring, curses.color_pair(2))
+    window_win.addstr(1, 2, endstring, curses.color_pair(2))
     window_win.refresh()
-    time.sleep(1.5)
+    time.sleep(3)
 
 
 # Define the main() function for the wrapper
