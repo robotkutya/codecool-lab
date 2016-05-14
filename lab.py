@@ -24,9 +24,9 @@ def testTerminal():
     # Test size of terminal
     test_window = curses.initscr()
     max_y, max_x = test_window.getmaxyx()
-    if map_dim[0] + 3 > max_y or map_dim[1] + 1 > max_x:
-        print("Please make the terminal at least " + str(map_dim[1]) +
-        " characters wide and " + str(map_dim[0]+2) + " lines high.")
+    if map_dim[0] + 4 > max_y or map_dim[1] + 1 > max_x:
+        print("Please make the terminal at least " + str(map_dim[1] + 1) +
+        " characters wide and " + str(map_dim[0] + 4) + " lines high.")
         curses.endwin()
         quit()
     else:
@@ -34,12 +34,14 @@ def testTerminal():
 
 # A collection of things that need to be done in the beggining, after readMap()
 def initialize():
-    global q, win_condition, map_fog_of_war
+    global q, win_condition, map_fog_of_war, score_counter, score_top
 
     # Set global variables
     q = -1
     win_condition = 0
     map_fog_of_war = set()
+    score_counter = 0
+    score_top = open('score', 'r').readlines()
 
     # Makes the cursor not blink
     curses.curs_set(False)
@@ -157,9 +159,6 @@ def drawMap(screen):
                 if map_in_memory[j][i] in start_char or space_char or no_keydrop:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
-#                if map_in_memory[j][i] in space_char:
-#                    screen.addstr(j, i, ' ', curses.color_pair(5))
-
                 # Before picking up key
                 if door_coordinates <= wall_coordinates:
                     if map_in_memory[j][i] in door_char:
@@ -222,7 +221,7 @@ def drawRezso(screen):
 
 # Controls the movement of Rezso, the 'R' character on screen
 def movement():
-    global R_pos, R_pos_previous, q
+    global R_pos, R_pos_previous, q, score_counter
 
     # Save Rezso's position
     R_pos_previous = deepcopy(R_pos)
@@ -230,12 +229,16 @@ def movement():
     # Movement itself
     if q == curses.KEY_UP and R_pos[0] > 0:
         R_pos[0] -= 1
+        score_counter += 1
     elif q == curses.KEY_DOWN and R_pos[0] < map_dim[0]-1:
         R_pos[0] += 1
+        score_counter += 1
     elif q == curses.KEY_LEFT and R_pos[1] > 0:
         R_pos[1] -= 1
+        score_counter += 1
     elif q == curses.KEY_RIGHT and R_pos[1] < map_dim[1]-1:
         R_pos[1] += 1
+        score_counter += 1
     else:
         pass
 
@@ -268,14 +271,32 @@ def checker():
     if (R_pos[0], R_pos[1]) in win_coordinates:
         win_condition = 1
 
+# Draw the scores and the info
+def drawScore(stdscr):
+    my, mx = stdscr.getmaxyx()
+    info_string = 'Press \'q\' to quit. Use the arrow keys to move with Rezső.'
+    score_string = 'Your score: ' + str(score_counter) + '   Record: ' + score_top[0]
+    stdscr.addstr(my-3, mx // 2 - len(score_string) // 2, score_string, curses.color_pair(6))
+    stdscr.addstr(my-2, mx // 2 - len(info_string) // 2, info_string, curses.color_pair(6))
+
 # What happens when you win
 def win(stdscr):
+    global map_fog_of_war
+
+    # Write top score in file
+    if score_counter < int(score_top[0]):
+        f = open('score', 'w')
+        f.write(str(score_counter))
+        f.close()
+
+    # Draw win screen
     endstring = 'EPIC WIN'
     my, mx = stdscr.getmaxyx()
-    window_win = curses.newwin(3, len(endstring)+4, my // 2 - 2, mx // 2 - len(endstring) // 2)
+    window_win = curses.newwin(my, mx, 0, 0)
     window_win.bkgd(' ', curses.color_pair(7))
     window_win.box()
-    window_win.addstr(1, 2, endstring, curses.A_BOLD)
+    window_win.addstr(my // 2, mx // 2 - len(endstring), endstring, curses.A_BOLD)
+    map_fog_of_war = set()
     window_win.refresh()
     time.sleep(3)
 
@@ -290,15 +311,12 @@ def main(stdscr):
     initialize()
     keyDrop()
 
-    # Make background
-    my, mx = stdscr.getmaxyx()
+    # Background settings
     stdscr.bkgd(' ', curses.color_pair(6) | curses.A_BOLD)
-    info_string = 'Press \'q\' to quit. Use the arrow keys to move with Rezső.'
-    stdscr.addstr(my-2, mx // 2 - len(info_string) // 2, info_string, curses.color_pair(6))
     stdscr.border(0)
-    stdscr.refresh()
 
     # Make window for map so it can be nice and centered
+    my, mx = stdscr.getmaxyx()
     screen = curses.newwin(map_dim[0], map_dim[1]+1, (my - map_dim[0]) // 2, (mx - map_dim[1]) // 2)
     screen.bkgd(' ', curses.color_pair(6))
     screen.keypad(1)
@@ -307,15 +325,18 @@ def main(stdscr):
     # The actual game
     while q != ord('q') and win_condition == 0:
         screen.clear()
+        stdscr.clear()
+        drawScore(stdscr)
         drawMap(screen)
         drawRezso(screen)
+        stdscr.refresh()
         screen.refresh()
         q = screen.getch()
         movement()
         checker()
 
-    if win_condition == 1:
-        win(stdscr)
+    #if win_condition == 1:
+    win(stdscr)
     curses.endwin()
 
 # Use the wrapper to avoid bugs and test before
