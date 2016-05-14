@@ -24,7 +24,7 @@ def testTerminal():
     # Test size of terminal
     test_window = curses.initscr()
     max_y, max_x = test_window.getmaxyx()
-    if map_dim[0] + 3 > max_y or map_dim[1] > max_x:
+    if map_dim[0] + 3 > max_y or map_dim[1] + 1 > max_x:
         print("Please make the terminal at least " + str(map_dim[1]) +
         " characters wide and " + str(map_dim[0]+2) + " lines high.")
         curses.endwin()
@@ -64,7 +64,7 @@ def keyDrop():
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
 def readMap():
-    global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, door_demo_coordinates, key_demo_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, door_demo_char, key_demo_char, win_char
+    global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, door_demo_coordinates, key_demo_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, door_demo_char, key_demo_char, no_keydrop, win_char
 
     # Set up variables
     map_in_memory = []
@@ -84,6 +84,7 @@ def readMap():
     door_char = {'D'}
     door_demo_char = {'K'}
     key_demo_char = {'k'}
+    no_keydrop = {'n'}
     win_char = {'W'}
 
     # Read the map file lines into a list
@@ -150,11 +151,11 @@ def drawMap(screen):
             if (j,i) in map_fog_of_war:
 
                 # Empty space where Rezso can move
-                if map_in_memory[j][i] in start_char:
+                if map_in_memory[j][i] in start_char or space_char or no_keydrop:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
-                if map_in_memory[j][i] in space_char:
-                    screen.addstr(j, i, ' ', curses.color_pair(5))
+#                if map_in_memory[j][i] in space_char:
+#                    screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 # Before picking up key
                 if door_coordinates <= wall_coordinates:
@@ -163,7 +164,7 @@ def drawMap(screen):
 
                     # We draw the key not from the map but from the keyDrop()
                     if (j,i) in key_drop_coordinates:
-                        screen.addstr(j, i, 'k', curses.color_pair(4))
+                        screen.addstr(j, i, '‼', curses.color_pair(4))
 
                 # After picking up key
                 if door_coordinates & wall_coordinates == set():
@@ -179,7 +180,7 @@ def drawMap(screen):
                         screen.addstr(j, i, '?', curses.color_pair(4))
 
                     if (j,i) in key_demo_coordinates:
-                        screen.addstr(j, i, 'k', curses.color_pair(4))
+                        screen.addstr(j, i, '‼', curses.color_pair(4))
 
                 # After picking up demo key
                 if door_demo_coordinates & wall_coordinates == set():
@@ -196,10 +197,10 @@ def drawMap(screen):
                     if map_in_memory[j][i] in teleport_char:
                             screen.addstr(j, i, '♦', curses.color_pair(3))
 
-                # After use
-                if (j, i) not in teleport_coordinates:
+                # After use and make sure the last one is drawn as used
+                if (j, i) not in teleport_coordinates or {(j,i)} == teleport_coordinates:
                     if map_in_memory[j][i] in teleport_char:
-                            screen.addstr(j, i, '⋄', curses.color_pair(3))
+                            screen.addstr(j, i, '♢', curses.color_pair(3))
 
                 # Walls
                 if map_in_memory[j][i] in wall_char_hor:
@@ -210,7 +211,7 @@ def drawMap(screen):
 
                 # Exit
                 if map_in_memory[j][i] in win_char:
-                        screen.addstr(j, i, 'X', curses.color_pair(4))
+                        screen.addstr(j, i, '♦', curses.color_pair(4))
 
 # Draws Rezso on the screen
 def drawRezso(screen):
@@ -295,7 +296,7 @@ def main(stdscr):
     window_background.refresh()
 
     # Make window for map so it can be nice and centered
-    screen = curses.newwin(map_dim[0], map_dim[1], (my - map_dim[0]) // 2, (mx - map_dim[1]) // 2)
+    screen = curses.newwin(map_dim[0]+1, map_dim[1]+1, (my - map_dim[0]) // 2, (mx - map_dim[1]) // 2)
     screen.bkgd(' ', curses.color_pair(6))
     screen.keypad(1)
 
