@@ -335,8 +335,8 @@ def main(stdscr):
         movement()
         checker()
 
-    #if win_condition == 1:
-    win(stdscr)
+    if win_condition == 1:
+        win(stdscr)
     curses.endwin()
 
 # Use the wrapper to avoid bugs and test before
