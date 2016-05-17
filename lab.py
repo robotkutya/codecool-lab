@@ -34,7 +34,11 @@ def testTerminal():
 
 # A collection of things that need to be done in the beggining, after readMap()
 def initialize():
-    global q, win_condition, map_fog_of_war, score_counter, score_top
+    global  q, \
+            win_condition, \
+            map_fog_of_war, \
+            score_counter, \
+            score_top
 
     # Set global variables
     q = -1
@@ -69,7 +73,25 @@ def keyDrop():
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
 def readMap():
-    global map_in_memory, R_pos, wall_coordinates, space_coordinates, teleport_coordinates, door_coordinates, door_demo_coordinates, key_demo_coordinates, win_coordinates, start_char, wall_char_ver, wall_char_hor, space_char, teleport_char, door_char, door_demo_char, key_demo_char, no_keydrop, win_char
+    global  map_in_memory, \
+            R_pos, \
+            wall_coordinates, \
+            space_coordinates, \
+            teleport_coordinates, \
+            door_coordinates, \
+            door_demo_coordinates, \
+            key_demo_coordinates, \
+            win_coordinates, \
+            start_char, \
+            wall_char_ver, \
+            wall_char_hor, \
+            space_char, \
+            teleport_char, \
+            door_char, \
+            door_demo_char, \
+            key_demo_char, \
+            no_keydrop, \
+            win_char
 
     # Set up variables
     map_in_memory = []
@@ -221,7 +243,10 @@ def drawRezso(screen):
 
 # Controls the movement of Rezso, the 'R' character on screen
 def movement():
-    global R_pos, R_pos_previous, q, score_counter
+    global  R_pos, \
+            R_pos_previous, \
+            q, \
+            score_counter
 
     # Save Rezso's position
     R_pos_previous = deepcopy(R_pos)
@@ -244,7 +269,11 @@ def movement():
 
 # Decides what happens when Rezso moves into an entity, e.g. a wall
 def checker():
-    global win_condition, R_pos, R_pos_previous, wall_coordinates, door_coordinates, teleport_coordinates
+    global  win_condition, \
+            R_pos, R_pos_previous, \
+            wall_coordinates, \
+            door_coordinates, \
+            teleport_coordinates
 
     # Makes walls impenetrable
     if (R_pos[0], R_pos[1]) in wall_coordinates:
