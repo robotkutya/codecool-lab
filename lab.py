@@ -80,7 +80,8 @@ def key_drop():
 # variables, maybe there is a better way to do this?
 def read_map():
     global map_in_memory, \
-            R_pos, \
+            r_pos, \
+            e_pos, \
             wall_coordinates, \
             space_coordinates, \
             teleport_coordinates, \
@@ -88,7 +89,8 @@ def read_map():
             door_demo_coordinates, \
             key_demo_coordinates, \
             win_coordinates, \
-            start_char, \
+            start_char_r, \
+            start_char_e, \
             wall_char_ver, \
             wall_char_hor, \
             space_char, \
@@ -109,7 +111,8 @@ def read_map():
     door_demo_coordinates = set()
     key_demo_coordinates = set()
     win_coordinates = set()
-    start_char = {'S'}
+    start_char_r = {'R'}
+    start_char_e = {'E'}
     wall_char_ver = {'8'}
     wall_char_hor = {'a'}
     space_char = {' '}
@@ -131,8 +134,12 @@ def read_map():
         for i in range(0, len(map_in_memory[0])):
 
             # Rezso's starting position
-            if map_in_memory[j][i] in start_char:
-                R_pos = [j, i]
+            if map_in_memory[j][i] in start_char_r:
+                r_pos = [j, i]
+
+            # Etus' starting position
+            if map_in_memory[j][i] in start_char_e:
+                e_pos = [j, i]
 
             # Space where you can move
             if map_in_memory[j][i] in space_char:
@@ -175,7 +182,8 @@ def draw_map(screen):
     # Add coordinates to map_fog_of_war set
     for x in range(-2, 3):
         for y in range(-2, 3):
-            map_fog_of_war.add((R_pos[0] + x, R_pos[1] + y))
+            map_fog_of_war.add((r_pos[0] + x, r_pos[1] + y))
+            map_fog_of_war.add((e_pos[0] + x, e_pos[1] + y))
 
     # Draw map from saved nested list
     for j in range(0, len(map_in_memory)):
@@ -185,8 +193,7 @@ def draw_map(screen):
             if (j, i) in map_fog_of_war:
 
                 # Empty space where Rezso can move
-                if map_in_memory[j][i] in /
-                start_char or space_char or no_keydrop:
+                if map_in_memory[j][i] in start_char_r or start_char_e or space_char or no_keydrop:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 # Before picking up key
@@ -230,8 +237,7 @@ def draw_map(screen):
                             screen.addstr(j, i, '♦', curses.color_pair(3))
 
                 # After use and make sure the last one is drawn as used
-                if (j, i) not in /
-                teleport_coordinates or {(j, i)} == teleport_coordinates:
+                if (j, i) not in teleport_coordinates or {(j, i)} == teleport_coordinates:
                     if map_in_memory[j][i] in teleport_char:
                             screen.addstr(j, i, '♢',
                                           curses.color_pair(3) | curses.A_BOLD)
@@ -250,32 +256,56 @@ def draw_map(screen):
 
 # Draws Rezso on the screen
 def draw_rezso(screen):
-    screen.addstr(R_pos[0], R_pos[1],
+    screen.addstr(r_pos[0], r_pos[1],
                   'R', curses.color_pair(5) | curses.A_BOLD)
 
 
+# Draws Etus on the screen
+def draw_etus(screen):
+    screen.addstr(e_pos[0], e_pos[1],
+                  'E', curses.color_pair(5) | curses.A_BOLD)
+
+
 # Controls the movement of Rezso, the 'R' character on screen
+# and Etus, the 'E' character on screen
 def movement():
-    global R_pos, \
-            R_pos_previous, \
+    global r_pos, \
+            r_pos_previous, \
+            e_pos, \
+            e_pos_previous, \
             q, \
             score_counter
 
-    # Save Rezso's position
-    R_pos_previous = deepcopy(R_pos)
+    # Save Rezso's and Etus' position
+    r_pos_previous = deepcopy(r_pos)
+    e_pos_previous = deepcopy(e_pos)
 
     # Movement itself
-    if q == curses.KEY_UP and R_pos[0] > 0:
-        R_pos[0] -= 1
+    # Rezso
+    if q == curses.KEY_UP and r_pos[0] > 0:
+        r_pos[0] -= 1
         score_counter += 1
-    elif q == curses.KEY_DOWN and R_pos[0] < map_dim[0]-1:
-        R_pos[0] += 1
+    elif q == curses.KEY_DOWN and r_pos[0] < map_dim[0]-1:
+        r_pos[0] += 1
         score_counter += 1
-    elif q == curses.KEY_LEFT and R_pos[1] > 0:
-        R_pos[1] -= 1
+    elif q == curses.KEY_LEFT and r_pos[1] > 0:
+        r_pos[1] -= 1
         score_counter += 1
-    elif q == curses.KEY_RIGHT and R_pos[1] < map_dim[1]-1:
-        R_pos[1] += 1
+    elif q == curses.KEY_RIGHT and r_pos[1] < map_dim[1]-1:
+        r_pos[1] += 1
+        score_counter += 1
+    # Etus
+    if q == ord('w') and e_pos[0] > 0:
+        e_pos[0] -= 1
+        score_counter += 1
+    elif q == ord('s') and e_pos[0] < map_dim[0]-1:
+        e_pos[0] += 1
+        score_counter += 1
+    elif q == ord('a') and e_pos[1] > 0:
+        e_pos[1] -= 1
+        score_counter += 1
+    elif q == ord('d') and e_pos[1] < map_dim[1]-1:
+        e_pos[1] += 1
         score_counter += 1
     else:
         pass
@@ -284,34 +314,55 @@ def movement():
 # Decides what happens when Rezso moves into an entity, e.g. a wall
 def checker():
     global win_condition, \
-            R_pos, R_pos_previous, \
+            r_pos, r_pos_previous, \
+            e_pos, e_pos_previous, \
             wall_coordinates, \
             door_coordinates, \
             teleport_coordinates
 
     # Makes walls impenetrable
-    if (R_pos[0], R_pos[1]) in wall_coordinates:
-        R_pos = deepcopy(R_pos_previous)
+    if (r_pos[0], r_pos[1]) in wall_coordinates:
+        r_pos = deepcopy(r_pos_previous)
+
+    if (e_pos[0], e_pos[1]) in wall_coordinates:
+        e_pos = deepcopy(e_pos_previous)
+
+    # Doesn't let Rezso and Etus be in the same position
+    if (r_pos[0], r_pos[1]) == (e_pos[0], e_pos[1]):
+        r_pos = deepcopy(r_pos_previous)
+        e_pos = deepcopy(e_pos_previous)
 
     # Removes the doors blocking the exit when you pick up the key
-    if (R_pos[0], R_pos[1]) in key_drop_coordinates:
+    if (r_pos[0], r_pos[1]) in key_drop_coordinates:
         wall_coordinates -= door_coordinates
 
-    if (R_pos[0], R_pos[1]) in key_demo_coordinates:
+    if (r_pos[0], r_pos[1]) in key_demo_coordinates:
         wall_coordinates -= door_demo_coordinates
 
-    # Teleports you to a random beacon, but you can only use one beacon once
-    if (R_pos[0], R_pos[1]) in teleport_coordinates:
-        teleport_coordinates -= {(R_pos[0], R_pos[1])}
+    # Teleports Rezso to a random beacon, but you can only use one beacon once
+    if (r_pos[0], r_pos[1]) in teleport_coordinates and (r_pos_previous[0], r_pos_previous[1]) not in teleport_coordinates:
+        teleport_coordinates -= {(r_pos[0], r_pos[1])}
+        r_pos_previous = deepcopy(r_pos)
         try:
             r = random.sample(teleport_coordinates, 1)
-            R_pos[0] = r[0][0]
-            R_pos[1] = r[0][1]
+            r_pos[0] = r[0][0]
+            r_pos[1] = r[0][1]
+        except ValueError:
+            pass
+
+    # Teleports Etus to a random beacon, but you can only use one beacon once
+    if (e_pos[0], e_pos[1]) in teleport_coordinates and (e_pos_previous[0], e_pos_previous[1]) not in teleport_coordinates:
+        teleport_coordinates -= {(e_pos[0], e_pos[1])}
+        e_pos_previous = deepcopy(e_pos)
+        try:
+            r = random.sample(teleport_coordinates, 1)
+            e_pos[0] = r[0][0]
+            e_pos[1] = r[0][1]
         except ValueError:
             pass
 
     # Win condition
-    if (R_pos[0], R_pos[1]) in win_coordinates:
+    if (r_pos[0], r_pos[1]) in win_coordinates:
         win_condition = 1
 
 
@@ -374,6 +425,7 @@ def main(stdscr):
         draw_score(stdscr)
         draw_map(screen)
         draw_rezso(screen)
+        draw_etus(screen)
         stdscr.refresh()
         screen.refresh()
         q = screen.getch()
