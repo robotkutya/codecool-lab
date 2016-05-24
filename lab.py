@@ -3,12 +3,15 @@
 # You need to find a key to open the door that leads you out of the labyrinth
 
 # Import libraries and methods that we need
-import curses, random, time
+import curses
+import random
+import time
 from curses import wrapper
 from copy import deepcopy
 
+
 # Checks if terminal is big enough for game, this is independent from wrapper
-def testTerminal():
+def test_terminal():
     global map_dim
 
     # Read map into list
@@ -17,7 +20,7 @@ def testTerminal():
     f.close()
 
     # Save map dimensions
-    map_dim = [0,0]
+    map_dim = [0, 0]
     map_dim[0] = len(map_test)
     map_dim[1] = len(map_test[0])
 
@@ -26,15 +29,16 @@ def testTerminal():
     max_y, max_x = test_window.getmaxyx()
     if map_dim[0] + 4 > max_y or map_dim[1] + 1 > max_x:
         print("Please make the terminal at least " + str(map_dim[1] + 1) +
-        " characters wide and " + str(map_dim[0] + 4) + " lines high.")
+              " characters wide and " + str(map_dim[0] + 4) + " lines high.")
         curses.endwin()
         quit()
     else:
         pass
 
-# A collection of things that need to be done in the beggining, after readMap()
+
+# A collection of things that need to be done in the beggining, after read_map()
 def initialize():
-    global  q, \
+    global q, \
             win_condition, \
             map_fog_of_war, \
             score_counter, \
@@ -64,16 +68,18 @@ def initialize():
     curses.init_pair(6, curses.COLOR_WHITE, curses.COLOR_CYAN)
     curses.init_pair(7, curses.COLOR_YELLOW, curses.COLOR_CYAN)
 
-# Generates the position of the key, has to run after readMap()
-def keyDrop():
+
+# Generates the position of the key, has to run after read_map()
+def key_drop():
     global key_drop_coordinates
     key_drop = random.sample(space_coordinates, 1)
     key_drop_coordinates = {key_drop[0]}
 
+
 # Reads and interprets the map file into memory, we use a lot of global
 # variables, maybe there is a better way to do this?
-def readMap():
-    global  map_in_memory, \
+def read_map():
+    global map_in_memory, \
             R_pos, \
             wall_coordinates, \
             space_coordinates, \
@@ -121,12 +127,12 @@ def readMap():
 
     # Make a nested list representation of the map for each character and
     # collect map data into the sets
-    for j in range(0,len(map_in_memory)):
-        for i in range(0,len(map_in_memory[0])):
+    for j in range(0, len(map_in_memory)):
+        for i in range(0, len(map_in_memory[0])):
 
             # Rezso's starting position
             if map_in_memory[j][i] in start_char:
-                R_pos = [j,i]
+                R_pos = [j, i]
 
             # Space where you can move
             if map_in_memory[j][i] in space_char:
@@ -161,8 +167,9 @@ def readMap():
             if map_in_memory[j][i] in wall_char_ver:
                 wall_coordinates.add((j, i))
 
+
 # Draws the map (walls, exit, etc) on the screen
-def drawMap(screen):
+def draw_map(screen):
     global map_fog_of_war
 
     # Add coordinates to map_fog_of_war set
@@ -171,14 +178,15 @@ def drawMap(screen):
             map_fog_of_war.add((R_pos[0] + x, R_pos[1] + y))
 
     # Draw map from saved nested list
-    for j in range(0,len(map_in_memory)):
-        for i in range(0,len(map_in_memory[0])):
+    for j in range(0, len(map_in_memory)):
+        for i in range(0, len(map_in_memory[0])):
 
             # Only draw if Rezso already saw it
-            if (j,i) in map_fog_of_war:
+            if (j, i) in map_fog_of_war:
 
                 # Empty space where Rezso can move
-                if map_in_memory[j][i] in start_char or space_char or no_keydrop:
+                if map_in_memory[j][i] in /
+                start_char or space_char or no_keydrop:
                     screen.addstr(j, i, ' ', curses.color_pair(5))
 
                 # Before picking up key
@@ -186,8 +194,8 @@ def drawMap(screen):
                     if map_in_memory[j][i] in door_char:
                         screen.addstr(j, i, '?', curses.color_pair(4))
 
-                    # We draw the key not from the map but from the keyDrop()
-                    if (j,i) in key_drop_coordinates:
+                    # We draw the key not from the map but from the key_drop()
+                    if (j, i) in key_drop_coordinates:
                         screen.addstr(j, i, '‼', curses.color_pair(4))
 
                 # After picking up key
@@ -195,7 +203,7 @@ def drawMap(screen):
                     if map_in_memory[j][i] in door_char:
                         screen.addstr(j, i, ' ', curses.color_pair(4))
 
-                    if (j,i) in key_drop_coordinates:
+                    if (j, i) in key_drop_coordinates:
                         screen.addstr(j, i, ' ', curses.color_pair(4))
 
                 # Before picking up demo key
@@ -203,7 +211,7 @@ def drawMap(screen):
                     if map_in_memory[j][i] in door_demo_char:
                         screen.addstr(j, i, '?', curses.color_pair(4))
 
-                    if (j,i) in key_demo_coordinates:
+                    if (j, i) in key_demo_coordinates:
                         screen.addstr(j, i, '‼', curses.color_pair(4))
 
                 # After picking up demo key
@@ -211,7 +219,7 @@ def drawMap(screen):
                     if map_in_memory[j][i] in door_demo_char:
                         screen.addstr(j, i, ' ', curses.color_pair(4))
 
-                    if (j,i) in key_demo_coordinates:
+                    if (j, i) in key_demo_coordinates:
                         screen.addstr(j, i, ' ', curses.color_pair(4))
 
                 # Teleport
@@ -222,9 +230,11 @@ def drawMap(screen):
                             screen.addstr(j, i, '♦', curses.color_pair(3))
 
                 # After use and make sure the last one is drawn as used
-                if (j, i) not in teleport_coordinates or {(j,i)} == teleport_coordinates:
+                if (j, i) not in /
+                teleport_coordinates or {(j, i)} == teleport_coordinates:
                     if map_in_memory[j][i] in teleport_char:
-                            screen.addstr(j, i, '♢', curses.color_pair(3) | curses.A_BOLD)
+                            screen.addstr(j, i, '♢',
+                                          curses.color_pair(3) | curses.A_BOLD)
 
                 # Walls
                 if map_in_memory[j][i] in wall_char_hor:
@@ -237,13 +247,16 @@ def drawMap(screen):
                 if map_in_memory[j][i] in win_char:
                         screen.addstr(j, i, '♦', curses.color_pair(4))
 
+
 # Draws Rezso on the screen
-def drawRezso(screen):
-    screen.addstr(R_pos[0], R_pos[1], 'R', curses.color_pair(5) | curses.A_BOLD)
+def draw_rezso(screen):
+    screen.addstr(R_pos[0], R_pos[1],
+                  'R', curses.color_pair(5) | curses.A_BOLD)
+
 
 # Controls the movement of Rezso, the 'R' character on screen
 def movement():
-    global  R_pos, \
+    global R_pos, \
             R_pos_previous, \
             q, \
             score_counter
@@ -267,9 +280,10 @@ def movement():
     else:
         pass
 
+
 # Decides what happens when Rezso moves into an entity, e.g. a wall
 def checker():
-    global  win_condition, \
+    global win_condition, \
             R_pos, R_pos_previous, \
             wall_coordinates, \
             door_coordinates, \
@@ -300,13 +314,15 @@ def checker():
     if (R_pos[0], R_pos[1]) in win_coordinates:
         win_condition = 1
 
+
 # Draw the scores and the info
-def drawScore(stdscr):
+def draw_score(stdscr):
     my, mx = stdscr.getmaxyx()
     info_string = 'Press \'q\' to quit. Use the arrow keys to move with Rezső.'
     score_string = 'Your score: ' + str(score_counter) + '   Record: ' + score_top[0]
     stdscr.addstr(my-3, mx // 2 - len(score_string) // 2, score_string, curses.color_pair(6))
     stdscr.addstr(my-2, mx // 2 - len(info_string) // 2, info_string, curses.color_pair(6))
+
 
 # What happens when you win
 def win(stdscr):
@@ -336,9 +352,9 @@ def main(stdscr):
     # this function
     global q
 
-    readMap()
+    read_map()
     initialize()
-    keyDrop()
+    key_drop()
 
     # Background settings
     stdscr.bkgd(' ', curses.color_pair(6) | curses.A_BOLD)
@@ -355,9 +371,9 @@ def main(stdscr):
     while q != ord('q') and win_condition == 0:
         screen.clear()
         stdscr.clear()
-        drawScore(stdscr)
-        drawMap(screen)
-        drawRezso(screen)
+        draw_score(stdscr)
+        draw_map(screen)
+        draw_rezso(screen)
         stdscr.refresh()
         screen.refresh()
         q = screen.getch()
@@ -369,5 +385,5 @@ def main(stdscr):
     curses.endwin()
 
 # Use the wrapper to avoid bugs and test before
-testTerminal()
+test_terminal()
 wrapper(main)
